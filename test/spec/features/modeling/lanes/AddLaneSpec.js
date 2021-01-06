@@ -13,6 +13,8 @@ import contextPadModule from 'lib/features/context-pad';
 import coreModule from 'lib/core';
 import modelingModule from 'lib/features/modeling';
 
+import { getElementsAffected } from 'lib/features/modeling/cmd/AddLaneHandler';
+
 import {
   getChildLanes
 } from 'lib/features/modeling/util/LaneUtil';
@@ -310,6 +312,7 @@ describe('features/modeling - add Lane', function() {
     }));
   });
 
+
   describe('flow node handling', function() {
 
     var diagramXML = require('./lanes-flow-nodes.bpmn');
@@ -473,6 +476,51 @@ describe('features/modeling - add Lane', function() {
         // expect Internet Explorer NOT to blow up
       }
     ));
+
+  });
+
+
+  describe('#getElementsAffected', function() {
+
+    var diagramXML = require('./lanes-flow-nodes.bpmn');
+
+    beforeEach(bootstrapModeler(diagramXML, {
+      modules: testModules
+    }));
+
+
+    it('should add elements', inject(function(elementRegistry) {
+
+      // given
+      var laneShape = elementRegistry.get('Nested_Lane_A'),
+          participantShape = elementRegistry.get('Participant_Lane');
+
+      // when
+      var elementsAffected = getElementsAffected(laneShape, participantShape);
+
+      // then
+      expect(elementsAffected).to.have.length(12);
+      expect(elementsAffected).to.not.include(laneShape);
+      expect(elementsAffected).to.include(participantShape);
+    }));
+
+
+    it('should not add elements twice', inject(function(elementRegistry) {
+
+      // given
+      var laneShape = elementRegistry.get('Nested_Lane_A'),
+          participantShape = elementRegistry.get('Participant_Lane');
+
+      // when
+      var elementsAffected = getElementsAffected(laneShape, participantShape);
+
+      // then
+      var duplicates = elementsAffected.filter(function(element, index) {
+        return elementsAffected.indexOf(element) !== index;
+      });
+
+      expect(duplicates).to.have.length(0);
+    }));
 
   });
 
